@@ -16,16 +16,15 @@ export default function App() {
           <Route index element={<Login/>}/>
           <Route path="register" element={<Register/>}/>
         </Route>
-        <Route path="/login"    element={<Login />} />
         <Route
           path="/lobby"
-          element={user ? <Lobby/> : <Navigate to="/login" replace />}
+          element={user ? <Lobby/> : <Navigate to="/" replace />}
           />
         <Route
           path="/room/:id"
-          element={user ? <Room/> : <Navigate to="/login" replace />}
+          element={user ? <Room/> : <Navigate to="/" replace />}
           />
-        <Route path="*" element={<Navigate to={user ? "/lobby":"/login"} replace />} />
+        <Route path="*" element={<Navigate to={user ? "/lobby":"/"} replace />} />
       </Routes>
     </BrowserRouter>
   );

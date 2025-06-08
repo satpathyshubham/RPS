@@ -1,0 +1,20 @@
+services:
+  # ---------- Frontend (static site) ----------
+  - type: web
+    name: my-frontend
+    runtime: static
+    rootDir: frontend             # run buildCommands from frontend/
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist       # outputs to frontend/dist/
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+
+  # ---------- Backend (Node.js API) ----------
+  - type: web
+    name: my-backend
+    runtime: node
+    rootDir: backend              # run build & start commands from backend/
+    buildCommand: npm install
+    startCommand: npm start

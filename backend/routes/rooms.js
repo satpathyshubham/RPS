@@ -6,7 +6,11 @@ let rooms = {};
 
 router.post('/', (req, res) => {
   const id = uuidv4();
-  rooms[id] = { players: [], moves: {} };
+  rooms[id] = {
+    players: [],
+    moves: {},
+    scores: {}
+  };
   res.json({ roomId: id });
 });
 

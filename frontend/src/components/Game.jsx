@@ -19,6 +19,7 @@ const MOVE_ICONS = {
 export default function Game({ socket, players, roomId }) {
   const [hasMoved, setHasMoved] = useState(false);
   const [selectedMoves, setSelectedMoves] = useState(null);
+  const [scores, setScores] = useState({});
   const [snack, setSnack] = useState({ open: false, msg: '', sev: 'info' });
   const timeoutRef = useRef();
 
@@ -28,16 +29,27 @@ export default function Game({ socket, players, roomId }) {
   const opponent = players.find(p => p.username !== me)?.username || '';
   const opId     = players.find(p => p.username !== me)?.id;
 
+  // get initial scores when the room updates
+  useEffect(() => {
+    socket.on('roomData', ({ scores: newScores }) => {
+      setScores(newScores);
+    });
+    return () => {
+      socket.off('roomData');
+    };
+  }, [socket]);
+
   const makeMove = (move) => {
     socket.emit('makeMove', { roomId, move });
     setHasMoved(true);
   };
 
+  // handle round results
   useEffect(() => {
-    socket.on('roundResult', ({ moves, winner }) => {
-
+    socket.on('roundResult', ({ moves, winner, scores: newScores }) => {
       setSelectedMoves(moves);
       setHasMoved(false);
+      if (newScores) setScores(newScores);
 
       let msg, sev;
       if (winner === 'draw') {
@@ -53,9 +65,7 @@ export default function Game({ socket, players, roomId }) {
       setSnack({ open: true, msg, sev });
 
       clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
-        setSelectedMoves(null);
-      }, 2000);
+      timeoutRef.current = setTimeout(() => setSelectedMoves(null), 2000);
     });
     return () => {
       socket.off('roundResult');
@@ -87,6 +97,9 @@ export default function Game({ socket, players, roomId }) {
           color: theme => theme.palette.common.white
         }}
       >
+        <Typography variant="subtitle2">
+          Score: {scores[opId] ?? 0}
+        </Typography>
         <Typography>{opponent}</Typography>
         {selectedMoves?.[opId] && (
           <Box
@@ -127,6 +140,9 @@ export default function Game({ socket, players, roomId }) {
           color: theme => theme.palette.common.white
         }}
       >
+        <Typography variant="subtitle2">
+          Score: {scores[meId] ?? 0}
+        </Typography>
         {selectedMoves?.[meId] && (
           <Box
             component="img"

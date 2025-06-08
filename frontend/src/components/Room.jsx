@@ -1,3 +1,4 @@
+// src/components/Room.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
@@ -15,44 +16,51 @@ import {
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 
-let socket;
-
 export default function Room() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
 
   const [players, setPlayers] = useState([]);
-  const [joined, setJoined]   = useState(false);
+  const [joined, setJoined] = useState(false);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    socket = io(import.meta.env.VITE_API_URL.replace('/api', ''), {
-      auth: { token: localStorage.getItem('token') }
-    });
+    // 1) Create socket and save in state
+    const s = io(
+      import.meta.env.VITE_API_URL.replace('/api', ''),
+      { auth: { token: localStorage.getItem('token') } }
+    );
+    setSocket(s);
 
-    socket.emit('joinRoom', id);
+    // 2) Join the room
+    s.emit('joinRoom', id);
 
-    socket.on('roomData', data => {
-      // now data = { players: [...], scores: {...} }
+    // 3) Listen for room data
+    s.on('roomData', data => {
+      // data = { players: [...], scores: {...} }
       setPlayers(data.players);
       setJoined(true);
     });
 
-    socket.on('errorMsg', msg => {
+    // 4) Handle errors
+    s.on('errorMsg', msg => {
       alert(msg);
       if (msg === 'Room not found' || msg === 'Auth error') {
         navigate('/lobby');
       }
     });
 
+    // 5) Cleanup on unmount
     return () => {
-      socket.disconnect();
+      s.disconnect();
     };
   }, [id, navigate]);
 
   const handleLeave = () => {
     navigate('/lobby');
   };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -95,7 +103,7 @@ export default function Room() {
           Room ID: {id}
         </Typography>
 
-        {players.length === 2 ? (
+        {socket && players.length === 2 ? (
           <Game socket={socket} players={players} roomId={id} />
         ) : (
           <Paper sx={{ p: 2 }}>
